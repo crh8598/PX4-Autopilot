@@ -97,6 +97,9 @@ set(msg_files
 	position_setpoint_triplet.msg
 	power_button_state.msg
 	power_monitor.msg
+	# for AStrox BMS system
+	pri_bat_info.msg
+	# ---------------------
 	pwm_input.msg
 	px4io_status.msg
 	qshell_req.msg
@@ -165,6 +168,7 @@ set(msg_files
 	wheel_encoders.msg
 	wind_estimate.msg
 	yaw_estimator_status.msg
+
 )
 
 if(NOT px4_constrained_flash_build)

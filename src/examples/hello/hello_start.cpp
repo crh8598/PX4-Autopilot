@@ -53,12 +53,12 @@ static int daemon_task;             /* Handle of deamon task / thread */
 extern "C" __EXPORT int hello_main(int argc, char *argv[]);
 int hello_main(int argc, char *argv[])
 {
-
+	// if there are no argument. return the code.
 	if (argc < 2) {
 		PX4_WARN("usage: hello {start|stop|status}\n");
 		return 1;
 	}
-
+	// first argument update.
 	if (!strcmp(argv[1], "start")) {
 
 		if (HelloExample::appState.isRunning()) {

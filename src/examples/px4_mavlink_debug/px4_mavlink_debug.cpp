@@ -52,6 +52,8 @@
 #include <uORB/topics/debug_value.h>
 #include <uORB/topics/debug_vect.h>
 #include <uORB/topics/debug_array.h>
+#include <uORB/topics/pri_bat_info.h>
+
 
 extern "C" __EXPORT int px4_mavlink_debug_main(int argc, char *argv[]);
 
@@ -60,9 +62,12 @@ int px4_mavlink_debug_main(int argc, char *argv[])
 	printf("Hello Debug!\n");
 
 	/* advertise named debug value */
+	//uorb의 메세지는 이름뒤에 _s 를 붙혀 구조체 형으로 사용한다. 메세지의 위치 : msg/debug_key_value.msg
 	struct debug_key_value_s dbg_key;
+	// 10 char copy to dbg_key.key
 	strncpy(dbg_key.key, "velx", 10);
 	dbg_key.value = 0.0f;
+	// make new Handler for debug_key_value and insert data which formed by structure
 	orb_advert_t pub_dbg_key = orb_advertise(ORB_ID(debug_key_value), &dbg_key);
 
 	/* advertise indexed debug value */
@@ -85,6 +90,13 @@ int px4_mavlink_debug_main(int argc, char *argv[])
 	strncpy(dbg_array.name, "dbg_array", 10);
 	orb_advert_t pub_dbg_array = orb_advertise(ORB_ID(debug_array), &dbg_array);
 
+	/* ASTROX BMS */
+	struct pri_bat_info_s pbi;
+	pbi.cells[0] = 98.4 + 6;
+	for (int i = 1; i<5; i++)
+		pbi.cells[i]=(24.6+(i*0.6));
+	orb_advert_t pub_pri_bat_info = orb_advertise(ORB_ID(pri_bat_info),&pbi);
+
 	int value_counter = 0;
 
 	while (value_counter < 100) {
@@ -106,6 +118,10 @@ int px4_mavlink_debug_main(int argc, char *argv[])
 		dbg_vect.z = 3.0f * value_counter;
 		dbg_vect.timestamp = timestamp_us;
 		orb_publish(ORB_ID(debug_vect), pub_dbg_vect, &dbg_vect);
+
+		/* ASTROX, Send pri bat info */
+		pbi.timestamp = timestamp_us;
+		orb_publish(ORB_ID(pri_bat_info),pub_pri_bat_info,&pbi);
 
 		/* send one array */
 		for (size_t i = 0; i < debug_array_s::ARRAY_SIZE; i++) {
