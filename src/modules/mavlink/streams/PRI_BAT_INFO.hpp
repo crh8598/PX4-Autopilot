@@ -1,3 +1,4 @@
+
 /****************************************************************************
  *
  *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
@@ -39,60 +40,73 @@
 class MavlinkStreamPriBatInfo: public MavlinkStream
 {
 public:
-	static MavlinkStream *new_instance(Mavlink *mavlink) { return new MavlinkStreamPriBatInfo(mavlink); }
 
-	static constexpr const char *get_name_static() { return "PRI_BAT_INFO"; }
-	static constexpr uint16_t get_id_static() { return MAVLINK_MSG_ID_PRI_BAT_INFO; }
+	const char *get_name() const override
+	{
+		return MavlinkStreamPriBatInfo::get_name_static();
+	}
 
-	const char *get_name() const override { return get_name_static(); }
-	uint16_t get_id() override { return get_id_static(); }
+	static constexpr const char *get_name_static()
+	{
+		 return "PRI_BAT_INFO";
+	}
+
+	static constexpr uint16_t get_id_static()
+	{
+		 return MAVLINK_MSG_ID_PRI_BAT_INFO;
+	}
+
+	uint16_t get_id() override
+	{
+		 return get_id_static();
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		PX4_INFO("pri_bat mavlink message created!");
+		return new MavlinkStreamPriBatInfo(mavlink);
+	}
 
 	unsigned get_size() override
 	{
 		return  _pri_bat_sub.advertised() ? MAVLINK_MSG_ID_PRI_BAT_INFO_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES : 0;
 	}
 
+
 private:
-	explicit MavlinkStreamPriBatInfo(Mavlink *mavlink) : MavlinkStream(mavlink) {}
-
 	uORB::Subscription _pri_bat_sub{ORB_ID(pri_bat_info)};
-	uint16_t cnt = 0;
+	uint64_t _pri_bat_info_time;
 
+	// do not allow top copying this class
+	MavlinkStreamPriBatInfo(MavlinkStreamPriBatInfo &) = delete;
+	MavlinkStreamPriBatInfo &operator = (const MavlinkStreamPriBatInfo &) = delete;
+
+protected:
+	explicit MavlinkStreamPriBatInfo(Mavlink *mavlink) : MavlinkStream(mavlink)
+	{}
 	bool send() override
 	{
 
-		pri_bat_info_s pri_bat_info;
-		if(_pri_bat_sub.update(&pri_bat_info))
+		pri_bat_info_s pri_bat_info{};
+		while(_pri_bat_sub.update(&pri_bat_info))
 		{
-			mavlink_pri_bat_info_t msg{};
-			if(pri_bat_info.cells[0] <= 1.0f)
-			{
-				msg.BAT = 97.9f;
-				msg.cell_part1= 23.7f;
-				msg.cell_part2 = 23.9f;
-				msg.cell_part3 = 24.1f;
-				msg.cell_part4 = 24.2f;
-				msg.fault_1 = 0;
-				msg.fault_2 = 0;
-			}
-			else
-			{
-				msg.BAT = pri_bat_info.cells[0];
-				msg.cell_part1= pri_bat_info.cells[1];
-				msg.cell_part2 = pri_bat_info.cells[2];
-				msg.cell_part3 = pri_bat_info.cells[3];
-				msg.cell_part4 = pri_bat_info.cells[4];
-				msg.fault_1 = pri_bat_info.fault_status[0];
-				msg.fault_2 = pri_bat_info.fault_status[1];
-			}
-			msg.time_usec = hrt_absolute_time();
-			mavlink_msg_pri_bat_info_send_struct(_mavlink->get_channel(), &msg);
+			mavlink_pri_bat_info_t msg = {};
+			_pri_bat_sub.copy(&pri_bat_info);
 
+			msg.bat = pri_bat_info.bat;
+			msg.cell_part1= pri_bat_info.cell_part1;
+			msg.cell_part2 = pri_bat_info.cell_part2;
+			msg.cell_part3 = pri_bat_info.cell_part3;
+			msg.cell_part4 = pri_bat_info.cell_part4;
+			msg.fault_1 = pri_bat_info.fault_1;
+			msg.fault_2 = pri_bat_info.fault_2;
+			msg.time_usec = pri_bat_info.timestamp;
+
+			mavlink_msg_pri_bat_info_send_struct(_mavlink->get_channel(), &msg);
+// mavlink_msg_pri_bat_info_send(_mavlink->get_channel(), msg.time_usec, msg.bat, msg.cell_part1, msg.cell_part2, msg.cell_part3, msg.cell_part4, msg.fault_1, msg.fault_2);
 			return true;
 
 		}
-		cnt++;
-
 
 		return false;
 	}

@@ -92,14 +92,18 @@ int px4_mavlink_debug_main(int argc, char *argv[])
 
 	/* ASTROX BMS */
 	struct pri_bat_info_s pbi;
-	pbi.cells[0] = 98.4 + 6;
-	for (int i = 1; i<5; i++)
-		pbi.cells[i]=(24.6+(i*0.6));
+	pbi.bat = 96.5;
+	pbi.cell_part1=23.3;
+	pbi.cell_part2=24.1;
+	pbi.cell_part3=24.4;
+	pbi.cell_part4=24.7;
+	pbi.fault_1 = 0;
+	pbi.fault_2 = 0;
 	orb_advert_t pub_pri_bat_info = orb_advertise(ORB_ID(pri_bat_info),&pbi);
 
 	int value_counter = 0;
 
-	while (value_counter < 100) {
+	while (value_counter < 1000) {
 		uint64_t timestamp_us = hrt_absolute_time();
 
 		/* send one named value */
